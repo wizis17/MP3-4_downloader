@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MP3/4_Downloader</title>
+  <link rel="icon" type="image/png" href="/static/img/image.png">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="container">
+    <h1 class="main-title">YouTube MP3/MP4 Downloader</h1>
+    <form id="downloadForm" method="POST" action="/download">
+      <div>
+        <label for="url" class="label">YouTube URL</label>
+        <input
+          type="text"
+          name="url"
+          id="url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          required
+          class="input"
+        />
+      </div>
+
+      <div>
+        <label for="filetype" class="label">Select Format</label>
+        <select
+          name="filetype"
+          id="filetype"
+          class="input"
+        >
+          <option value="mp4">🎥 MP4 (Video)</option>
+          <option value="mp3">🎧 MP3 (Audio)</option>
+        </select>
+      </div>
+
+      <div id="qualityDiv">
+        <label for="quality" class="label">Quality</label>
+        <select
+          name="quality"
+          id="quality"
+          class="input"
+        >
+          <option value="best">High (1080p)</option>
+          <option value="720">720p</option>
+          <option value="small">Smallest (Fastest/Lowest MB)</option>
+        </select>
+      </div>
+
+      <div id="audioQualityDiv" class="hidden">
+        <label for="audio_quality" class="label">Audio Quality</label>
+        <select
+          name="audio_quality"
+          id="audio_quality"
+          class="input"
+        >
+          <option value="320">320 kbps (Best)</option>
+          <option value="192">192 kbps</option>
+          <option value="128">128 kbps (Smallest)</option>
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        class="button"
+        id="submitBtn"
+      >
+         Download
+      </button>
+
+      <!-- Loading indicator -->
+      <div id="loading" class="hidden loading-indicator">
+        <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l5-5-5-5v4a10 10 0 00-10 10h4z"></path>
+        </svg>
+        <span>Downloading... Please wait</span>
+      </div>
+
+      <!-- Download complete message -->
+      <div id="completeMessage" class="hidden complete-message">
+        <span>Download Complete!</span>
+        <button onclick="window.location.reload()" class="button secondary">
+          Back to Home
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <footer class="footer">
+    <hr>
+    <p>
+      &copy; 2025 YouTube MP3/MP4 Downloader. Made with ♥ using Flask.<br>
+      If you enjoy this project, consider sharing it with friends!<br>
+    </p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
+
