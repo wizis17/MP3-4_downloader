@@ -1,14 +1,19 @@
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, abort
 from flask_cors import CORS
 import yt_dlp
 import os
 import uuid
+import time
 
 app = Flask(__name__)
-CORS(app)  # Or: CORS(app, origins=["https://your-firebase-project.web.app"])
+CORS(app)
 
 DOWNLOAD_DIR = "download"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# Simple in-memory rate limit: {ip: [timestamps]}
+rate_limit = {}
+MAX_DOWNLOADS_PER_HOUR = 5
 
 @app.route('/')
 def index():
@@ -16,6 +21,15 @@ def index():
 
 @app.route('/download', methods=['POST'])
 def download():
+    ip = request.remote_addr
+    now = time.time()
+    # Clean up old timestamps
+    rate_limit.setdefault(ip, [])
+    rate_limit[ip] = [t for t in rate_limit[ip] if now - t < 3600]
+    if len(rate_limit[ip]) >= MAX_DOWNLOADS_PER_HOUR:
+        return "Rate limit exceeded. Try again later.", 429
+    rate_limit[ip].append(now)
+
     url = request.form['url']
     filetype = request.form['filetype']
     quality = request.form.get('quality', 'best')
@@ -44,7 +58,6 @@ def download():
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        # Get the actual output filename from yt_dlp
         if 'requested_downloads' in info:
             real_path = info['requested_downloads'][0]['filepath']
             ext = real_path.split('.')[-1]
@@ -55,7 +68,6 @@ def download():
             ext = 'mp3' if filetype == 'mp3' else info.get('ext', 'mp4')
             real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}")
 
-    # Use the video title for the download name
     download_name = f"{info.get('title', unique_id)}.{ext}"
 
     if os.path.exists(real_path):
