@@ -49,6 +49,7 @@ def download():
     ydl_opts = {
         'format': ydl_format,
         'outtmpl': output_path,
+        'cookiefile': 'cookies.txt',  # <-- Add this line
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
