@@ -1,6 +1,7 @@
 {
   "projects": {
-    "staging": "generator-mp3"
+    "staging": "generator-mp3",
+    "generator": "generator-mp3"
   },
   "targets": {},
   "etags": {}
