@@ -57,17 +57,21 @@ def download():
         }] if filetype == 'mp3' else []
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        if 'requested_downloads' in info:
-            real_path = info['requested_downloads'][0]['filepath']
-            ext = real_path.split('.')[-1]
-        elif 'filepath' in info:
-            real_path = info['filepath']
-            ext = real_path.split('.')[-1]
-        else:
-            ext = 'mp3' if filetype == 'mp3' else info.get('ext', 'mp4')
-            real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}") 
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            if 'requested_downloads' in info:
+                real_path = info['requested_downloads'][0]['filepath']
+                ext = real_path.split('.')[-1]
+            elif 'filepath' in info:
+                real_path = info['filepath']
+                ext = real_path.split('.')[-1]
+            else:
+                ext = 'mp3' if filetype == 'mp3' else info.get('ext', 'mp4')
+                real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}") 
+
+    except Exception as e:
+        return f"Download failed: {e}", 500
 
     download_name = f"{info.get('title', unique_id)}.{ext}"
 
