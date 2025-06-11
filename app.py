@@ -67,7 +67,7 @@ def download():
             ext = real_path.split('.')[-1]
         else:
             ext = 'mp3' if filetype == 'mp3' else info.get('ext', 'mp4')
-            real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}")
+            real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}") 
 
     download_name = f"{info.get('title', unique_id)}.{ext}"
 
