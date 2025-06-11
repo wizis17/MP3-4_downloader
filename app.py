@@ -1,9 +1,12 @@
 from flask import Flask, request, render_template, send_file
+from flask_cors import CORS
 import yt_dlp
 import os
 import uuid
 
 app = Flask(__name__)
+CORS(app)  # Or: CORS(app, origins=["https://your-firebase-project.web.app"])
+
 DOWNLOAD_DIR = "download"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
