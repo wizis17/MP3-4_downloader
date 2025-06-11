@@ -44,14 +44,16 @@ def download():
         # Get the actual output filename from yt_dlp
         if 'requested_downloads' in info:
             real_path = info['requested_downloads'][0]['filepath']
+            ext = real_path.split('.')[-1]
         elif 'filepath' in info:
             real_path = info['filepath']
+            ext = real_path.split('.')[-1]
         else:
             ext = 'mp3' if filetype == 'mp3' else info.get('ext', 'mp4')
             real_path = os.path.join(DOWNLOAD_DIR, f"{unique_id}.{ext}")
 
     # Use the video title for the download name
-    download_name = f"{info['title']}.{ext}"
+    download_name = f"{info.get('title', unique_id)}.{ext}"
 
     if os.path.exists(real_path):
         return send_file(real_path, as_attachment=True, download_name=download_name)
