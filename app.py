@@ -180,4 +180,5 @@ if __name__ == '__main__':
     print("Starting YouTube Downloader Server...")
     port = int(os.environ.get('PORT', 5000))
     print("Server will run at: http://localhost:{port}")
-    app.run(debug=True, port=port)
+    print("🎉 Your service is live 🎉")
+    app.run(debug=False, port=port, host='0.0.0.0', threaded=True)
