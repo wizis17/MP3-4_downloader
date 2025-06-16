@@ -131,6 +131,10 @@ def download():
         }] if filetype == 'mp3' else [],
         'noplaylist': True,  # Only download single video
         'ignoreerrors': False,
+        'no_warnings': True,
+        'extract_flat': False,
+        'writesubtitles': False,
+        'writeautomaticsub': False,
     }
 
     try:
@@ -138,6 +142,10 @@ def download():
             # Extract info first
             info = ydl.extract_info(url, download=False)
             title = info.get('title', 'Unknown')
+            
+            # Check if video is available
+            if info.get('availability') and 'private' in info.get('availability', '').lower():
+                return "Video is private or unavailable. Please check the URL.", 400
             
             # Now download
             info = ydl.extract_info(url, download=True)
@@ -159,11 +167,27 @@ def download():
             
             if not real_path or not os.path.exists(real_path):
                 return "Download completed but file not found", 500
-
+            
     except yt_dlp.utils.DownloadError as e:
-        return f"Download failed: {str(e)}", 500
+        error_msg = str(e).lower()
+        if "ffmpeg" in error_msg or "avconv" in error_msg:
+            return "MP3 conversion not supported on this server. Please try MP4 format instead.", 500
+        elif "private" in error_msg or "unavailable" in error_msg:
+            return "Video is private or unavailable. Please check the URL and try again.", 400
+        elif "age" in error_msg and "restricted" in error_msg:
+            return "Age-restricted video. Cannot download without proper authentication.", 400
+        elif "copyright" in error_msg:
+            return "Video is copyright protected and cannot be downloaded.", 400
+        elif "live" in error_msg:
+            return "Live streams cannot be downloaded. Please try after the stream ends.", 400
+        else:
+            return f"Download failed: {str(e)}", 500
     except Exception as e:
-        return f"Unexpected error: {str(e)}", 500
+        error_msg = str(e)
+        if "ffmpeg" in error_msg.lower():
+            return "Audio conversion failed. Please try MP4 format instead.", 500
+        else:
+            return f"Unexpected error: {error_msg}", 500
 
     # Generate clean filename
     safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
