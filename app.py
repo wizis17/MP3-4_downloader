@@ -9,6 +9,11 @@ import json
 app = Flask(__name__)
 CORS(app)
 
+# Add static file handling for production
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_file(f'static/{filename}')
+
 DOWNLOAD_DIR = "download"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -178,7 +183,8 @@ def download():
 
 if __name__ == '__main__':
     print("Starting YouTube Downloader Server...")
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 10000))
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
     print("Server will run at: http://localhost:{port}")
     print("🎉 Your service is live 🎉")
-    app.run(debug=False, port=port, host='0.0.0.0', threaded=True)
+    app.run(debug=debug_mode, port=port, host='0.0.0.0')
