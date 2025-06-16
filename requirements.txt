@@ -1,5 +1,5 @@
-flask==3.0.0
-flask-cors==4.0.0
-yt-dlp==2024.12.30
-gunicorn==21.2.0
-Werkzeug==3.0.1
+flask>=3.0.0
+flask-cors>=4.0.0
+yt-dlp>=2024.6.0
+gunicorn>=21.0.0
+Werkzeug>=3.0.0
