@@ -21,63 +21,6 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 rate_limit = {}
 MAX_DOWNLOADS_PER_HOUR = 5
 
-# Load cookies from JSON file and convert to Netscape format
-def load_cookies():
-    try:
-        with open('cookies.json', 'r') as f:
-            cookies_data = json.load(f)
-        
-        # Convert JSON cookies to Netscape format for yt-dlp
-        cookies_txt = []
-        cookies_txt.append("# Netscape HTTP Cookie File")
-        cookies_txt.append("# This is a generated file! Do not edit.")
-        cookies_txt.append("")
-        
-        for cookie in cookies_data:
-            # Netscape format: domain, domain_specified, path, secure, expires, name, value
-            domain = cookie.get('domain', '.youtube.com')
-            if not domain.startswith('.'):
-                domain = '.' + domain.lstrip('.')
-            
-            domain_specified = 'TRUE'
-            path = cookie.get('path', '/')
-            secure = 'TRUE' if cookie.get('secure', False) else 'FALSE'
-            
-            # Handle expiration date
-            expires = cookie.get('expirationDate')
-            if expires is None:
-                expires = int(time.time()) + 86400 * 365  # 1 year from now
-            else:
-                expires = int(float(expires))
-            
-            name = cookie.get('name', '')
-            value = cookie.get('value', '')
-            
-            # Skip empty cookies
-            if not name or not value:
-                continue
-                
-            # Format: domain \t domain_specified \t path \t secure \t expires \t name \t value
-            cookie_line = f"{domain}\t{domain_specified}\t{path}\t{secure}\t{expires}\t{name}\t{value}"
-            cookies_txt.append(cookie_line)
-        
-        # Write to cookies.txt file
-        with open('cookies.txt', 'w', encoding='utf-8') as f:
-            f.write('\n'.join(cookies_txt))
-        
-        print(f"✅ Converted {len(cookies_data)} cookies to Netscape format")
-        return True
-        
-    except FileNotFoundError:
-        print("❌ cookies.json not found. Some videos may not be accessible.")
-        return False
-    except json.JSONDecodeError as e:
-        print(f"❌ Invalid JSON in cookies.json: {e}")
-        return False
-    except Exception as e:
-        print(f"❌ Error loading cookies: {e}")
-        return False
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -105,9 +48,10 @@ def download():
     audio_quality = request.form.get('audio_quality', '192')
     unique_id = str(uuid.uuid4())
     
-    # Set format based on filetype and quality
+    # Set format based on filetype and quality - NO FFmpeg conversion
     if filetype == 'mp3':
-        ydl_format = 'bestaudio/best'
+        # Download best audio format (m4a/webm) without conversion
+        ydl_format = 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best'
         output_path = f"{DOWNLOAD_DIR}/{unique_id}.%(ext)s"
     elif quality == '720':
         ydl_format = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best[height<=720]'
@@ -119,17 +63,12 @@ def download():
         ydl_format = 'bestvideo+bestaudio/best'
         output_path = f"{DOWNLOAD_DIR}/{unique_id}.%(ext)s"
 
-    # Use existing cookies.txt file if it exists
+    # Simple ydl_opts without FFmpeg postprocessors
     ydl_opts = {
         'format': ydl_format,
         'outtmpl': output_path,
         'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': audio_quality,
-        }] if filetype == 'mp3' else [],
-        'noplaylist': True,  # Only download single video
+        'noplaylist': True,
         'ignoreerrors': False,
         'no_warnings': True,
         'extract_flat': False,
@@ -166,13 +105,11 @@ def download():
                         break
             
             if not real_path or not os.path.exists(real_path):
-                return "Download completed but file not found", 500
+                return "Download completed but file not found. Try a different video.", 500
             
     except yt_dlp.utils.DownloadError as e:
         error_msg = str(e).lower()
-        if "ffmpeg" in error_msg or "avconv" in error_msg:
-            return "MP3 conversion not supported on this server. Please try MP4 format instead.", 500
-        elif "private" in error_msg or "unavailable" in error_msg:
+        if "private" in error_msg or "unavailable" in error_msg:
             return "Video is private or unavailable. Please check the URL and try again.", 400
         elif "age" in error_msg and "restricted" in error_msg:
             return "Age-restricted video. Cannot download without proper authentication.", 400
@@ -183,11 +120,7 @@ def download():
         else:
             return f"Download failed: {str(e)}", 500
     except Exception as e:
-        error_msg = str(e)
-        if "ffmpeg" in error_msg.lower():
-            return "Audio conversion failed. Please try MP4 format instead.", 500
-        else:
-            return f"Unexpected error: {error_msg}", 500
+        return f"Unexpected error: {str(e)}", 500
 
     # Generate clean filename
     safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
@@ -198,7 +131,7 @@ def download():
     except Exception as e:
         return f"Error sending file: {str(e)}", 500
     finally:
-        # Clean up downloaded file after sending (optional)
+        # Clean up downloaded file after sending
         try:
             if real_path and os.path.exists(real_path):
                 os.remove(real_path)
@@ -209,6 +142,6 @@ if __name__ == '__main__':
     print("Starting YouTube Downloader Server...")
     port = int(os.environ.get('PORT', 10000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
-    print("Server will run at: http://localhost:{port}")
-    print("🎉 Your service is live 🎉")
+    print(f"🎉 Server starting on port {port}")
+    print("Ready to download YouTube videos!")
     app.run(debug=debug_mode, port=port, host='0.0.0.0')
